@@ -30,8 +30,7 @@
   #hub-menu-toggle:hover{background:#F6F5F1;}
   #hub-topbar-brand{display:flex;align-items:center;gap:10px;flex:1;min-width:0;}
   #hub-topbar-brand .hub-logo{
-    width:28px;height:28px;border-radius:7px;background:#fff;border:1px solid #DEDBD2;
-    object-fit:contain;padding:3px;box-sizing:border-box;flex-shrink:0;
+    width:32px;height:auto;object-fit:contain;flex-shrink:0;
   }
   #hub-topbar-title{font-size:15px;font-weight:600;color:#2A2925;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   #hub-cloud-status{
@@ -43,41 +42,40 @@
   #hub-cloud-status.sincronizando{color:#A5691F;border-color:#A5691F;background:#FAF0DD;}
 
   #hub-sidebar{
-    width:250px;background:#1C2430;color:#E9E7DF;
+    width:250px;background:#3D2A1E;color:#E8DBCC;
     display:flex;flex-direction:column;
     position:fixed;left:0;top:0;height:100vh;z-index:200;
     transform:translateX(-100%);transition:transform .2s ease;box-shadow:2px 0 20px rgba(0,0,0,.25);
   }
   #hub-sidebar.hub-open{transform:translateX(0);}
-  #hub-brand{padding:22px 22px 16px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:space-between;gap:10px;}
+  #hub-brand{padding:22px 22px 16px;border-bottom:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:space-between;gap:10px;}
   #hub-brand-info{display:flex;align-items:center;gap:12px;}
   #hub-brand .hub-logo{
-    width:34px;height:34px;border-radius:9px;background:#fff;border:1px solid rgba(255,255,255,.15);
-    object-fit:contain;padding:3px;box-sizing:border-box;flex-shrink:0;
+    width:44px;height:auto;object-fit:contain;flex-shrink:0;
   }
-  #hub-brand h1{font-size:15px;font-weight:600;margin:0 0 2px;letter-spacing:-0.01em;color:#fff;}
-  #hub-brand .hub-sub{font-size:11px;color:#9CA3AF;margin:0;}
-  #hub-sidebar-close{border:none;background:rgba(255,255,255,.08);color:#C9CDD3;border-radius:7px;width:28px;height:28px;cursor:pointer;font-size:14px;flex-shrink:0;}
-  #hub-sidebar-close:hover{background:rgba(255,255,255,.16);color:#fff;}
+  #hub-brand h1{font-size:15px;font-weight:600;margin:0 0 2px;letter-spacing:-0.01em;color:#FFFFFF;}
+  #hub-brand .hub-sub{font-size:11px;color:#A8907C;margin:0;}
+  #hub-sidebar-close{border:none;background:rgba(255,255,255,.08);color:#E8DBCC;border-radius:7px;width:28px;height:28px;cursor:pointer;font-size:14px;flex-shrink:0;}
+  #hub-sidebar-close:hover{background:rgba(255,255,255,.16);color:#FFFFFF;}
 
   #hub-nav{display:flex;flex-direction:column;gap:2px;padding:14px 12px;flex:1;}
-  .hub-navlabel{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:#6B7280;padding:8px 10px 6px;}
+  .hub-navlabel{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:#A8907C;padding:8px 10px 6px;}
   .hub-navbtn{
     display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:8px;
-    border:none;background:transparent;font-size:13.5px;color:#C9CDD3;cursor:pointer;
+    border:none;background:transparent;font-size:13.5px;color:#D9C7B8;cursor:pointer;
     white-space:nowrap;font-family:inherit;text-align:left;width:100%;
   }
-  .hub-navbtn:hover{background:rgba(255,255,255,.06);color:#fff;}
+  .hub-navbtn:hover{background:rgba(255,255,255,.08);color:#FFFFFF;}
   .hub-navbtn.hub-active{background:#761611;color:#fff;font-weight:600;}
   .hub-ic{font-size:16px;width:20px;text-align:center;flex-shrink:0;}
   .hub-label{overflow:hidden;text-overflow:ellipsis;}
-  #hub-sidebar-foot{padding:14px 22px 18px;border-top:1px solid rgba(255,255,255,.08);}
+  #hub-sidebar-foot{padding:14px 22px 18px;border-top:1px solid rgba(255,255,255,.1);}
   #hub-settings-btn{
-    width:100%;text-align:left;background:rgba(255,255,255,.06);border:none;color:#C9CDD3;
+    width:100%;text-align:left;background:rgba(255,255,255,.08);border:none;color:#E8DBCC;
     border-radius:8px;padding:9px 10px;font-size:12px;cursor:pointer;margin-bottom:8px;font-family:inherit;
   }
-  #hub-settings-btn:hover{background:rgba(255,255,255,.12);color:#fff;}
-  #hub-sidebar-foot p{font-size:10.5px;color:#6B7280;line-height:1.5;margin:0;}
+  #hub-settings-btn:hover{background:rgba(255,255,255,.16);color:#FFFFFF;}
+  #hub-sidebar-foot p{font-size:10.5px;color:#A8907C;line-height:1.5;margin:0;}
 
   #hub-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:150;}
   #hub-overlay.hub-open{display:block;}
@@ -90,8 +88,7 @@
     flex-direction:column;gap:12px;font-family:inherit;
   }
   #hub-loading .hub-logo{
-    width:48px;height:48px;border-radius:12px;background:#fff;border:1px solid #DEDBD2;
-    object-fit:contain;padding:5px;box-sizing:border-box;
+    width:64px;height:auto;object-fit:contain;
   }
   #hub-loading p{font-size:13px;color:#6B685F;}
 
@@ -179,6 +176,12 @@
 
   #panel-mod-folha .row-actions {margin-top:20px;display:flex;gap:8px;flex-wrap:wrap;}
   #panel-mod-folha .save-note {font-size:12px;color:var(--text-secondary);margin-top:10px;}
+  #panel-mod-folha .help-details {margin-top:12px;font-size:12px;color:var(--text-secondary);}
+  #panel-mod-folha .help-details summary {cursor:pointer;font-weight:600;color:var(--accent-text);list-style:none;}
+  #panel-mod-folha .help-details summary::-webkit-details-marker {display:none;}
+  #panel-mod-folha .help-details summary::before {content:'▸ ';}
+  #panel-mod-folha .help-details[open] summary::before {content:'▾ ';}
+  #panel-mod-folha .help-details p {margin:8px 0 0;line-height:1.6;}
   #panel-mod-folha footer {margin-top:24px;font-size:12px;color:var(--text-secondary);text-align:center;}
   @media (max-width:640px){#panel-mod-folha .metrics {grid-template-columns:repeat(2,1fr);}}
 
@@ -446,14 +449,14 @@
 <body>
 
 <div id="hub-loading">
-  <img class="hub-logo" src="icon-192.png" alt="Pulse Gym">
+  <img class="hub-logo" src="logo.png" alt="Pulse Gym">
   <p id="hub-loading-text">Carregando Pulse Gym…</p>
 </div>
 
 <div id="hub-topbar">
   <button id="hub-menu-toggle" onclick="hubToggleSidebar()">☰</button>
   <div id="hub-topbar-brand">
-    <img class="hub-logo" src="icon-192.png" alt="Pulse Gym">
+    <img class="hub-logo" src="logo.png" alt="Pulse Gym">
     <span id="hub-topbar-title">Folha de pagamento</span>
   </div>
   <div id="hub-cloud-status" onclick="hubOpenSettings()">☁️ configurar nuvem</div>
@@ -462,7 +465,7 @@
 <aside id="hub-sidebar">
   <div id="hub-brand">
     <div id="hub-brand-info">
-      <img class="hub-logo" src="icon-192.png" alt="Pulse Gym">
+      <img class="hub-logo" src="logo.png" alt="Pulse Gym">
       <div>
         <h1>Pulse Gym</h1>
         <p class="hub-sub">Central de gestão</p>
@@ -533,7 +536,10 @@
         <tfoot><tr id="folha-tfoot-folha"></tr></tfoot>
       </table>
     </div>
-    <p class="save-note">Para Professor e Estagiário, o campo Salário é o valor da hora — o total é calculado a partir de dias trabalhados × horas diárias, mais hora extra/devedora. Cada sábado trabalhado soma um valor fixo de 5 horas no mês, independente das horas diárias. Para Recepcionista, Serviços gerais, Coordenador e Supervisora Geral, o Salário é fixo e os campos de horas diárias, dias trabalhados, sábados e hora extra ficam desativados (—), já que não existe valor por hora pra calcular sobre eles. Out.Prov. e Out.Desc. vêm automaticamente da aba Deduções e benefícios — edite os valores lá. Para Estagiário, o total calculado já é o líquido, sem aplicar DSR ou descontos. Lançar uma falta já calcula o desconto sozinho: horas diárias × valor da hora × nº de faltas para Professor/Estagiário, ou salário ÷ 30 × nº de faltas para as categorias de salário fixo — e joga direto no Out.Desc.</p>
+    <details class="help-details">
+      <summary>Como funciona o cálculo</summary>
+      <p>Para Professor e Estagiário, o campo Salário base é o valor da hora — o total é calculado a partir de dias trabalhados × horas diárias, mais hora extra/devedora (um número negativo em hora extra funciona como hora devedora, reduzindo o total). Cada sábado soma um valor fixo de 5 horas no mês, independente das horas diárias. Para Recepcionista, Serviços gerais, Coordenador e Supervisora Geral, o Salário base é fixo e os campos de horas diárias, dias trabalhados, sábados e hora extra ficam desativados (—). Outras prov. junta DSR e valor variável (recepcionistas) — edite cada um na aba Deduções ou Variável. Descontos junta o desconto do funcionário (ex. INSS), o desconto por falta e o desconto de vale transporte — edite cada um na aba correspondente. Para Estagiário, o total calculado já é o líquido, sem aplicar essas provisões ou descontos. Lançar uma falta já calcula o desconto sozinho: horas diárias × valor da hora × nº de faltas para Professor/Estagiário, ou salário ÷ 30 × nº de faltas para as categorias de salário fixo.</p>
+    </details>
   </div>
 
   <!-- DEDUÇÕES E BENEFÍCIOS -->
@@ -1155,14 +1161,14 @@ function calcLiquido(p, f, d, v, vt){
 const colsFolhaDef = [
   {key:'nome', label:'Nome', left:true, get:r=>r.p.nome},
   {key:'cat', label:'Categoria', left:true, get:r=>r.p.cat},
-  {key:'sal', label:'Salário', get:r=>+r.f.sal||0},
+  {key:'sal', label:'Salário base', get:r=>+r.f.sal||0},
   {key:'horasDiarias', label:'Horas diárias', get:r=>isHourly(r.p.cat)?(+r.f.horasDiarias||0):-1},
   {key:'diasTrab', label:'Dias trabalhados', get:r=>isHourly(r.p.cat)?(+r.f.diasTrab||0):-1},
-  {key:'sabados', label:'Sábados trabalhados', get:r=>isHourly(r.p.cat)?(+r.f.sabados||0):-1},
+  {key:'sabados', label:'Sábados', get:r=>isHourly(r.p.cat)?(+r.f.sabados||0):-1},
   {key:'horaExtra', label:'Hora extra/devedora', get:r=>isHourly(r.p.cat)?(+r.f.horaExtra||0):-1},
-  {key:'faltas', label:'Faltas', get:r=>+r.f.faltas||0},
-  {key:'dsr', label:'Out.Prov. (DSR)', get:r=>r.p.cat==='Estagiário'?0:(+r.d.dsr||0)},
-  {key:'descontos', label:'Out.Desc.', get:r=>r.p.cat==='Estagiário'?0:((+r.d.descontos||0)+(+r.d.descontoFaltas||0)+(r.vt?(+r.vt.desconto||0):0))},
+  {key:'faltas', label:'Faltas total', get:r=>+r.f.faltas||0},
+  {key:'dsr', label:'Outras prov.', get:r=>r.p.cat==='Estagiário'?0:((+r.d.dsr||0)+(+(r.v?.valor)||0))},
+  {key:'descontos', label:'Descontos', get:r=>r.p.cat==='Estagiário'?0:((+r.d.descontos||0)+(+r.d.descontoFaltas||0)+(r.vt?(+r.vt.desconto||0):0))},
   {key:'liquido', label:'Líquido', get:r=>calcLiquido(r.p,r.f,r.d,r.v,r.vt)}
 ];
 
@@ -1298,13 +1304,16 @@ function renderFolha(){
 
     const tdProv=document.createElement('td');
     const spanProv=document.createElement('div'); spanProv.className='readonly-val';
-    spanProv.textContent = p.cat==='Estagiário' ? '—' : 'R$ '+fmt(d.dsr);
+    const provTotal = (+d.dsr||0) + (+(v?.valor)||0);
+    spanProv.textContent = p.cat==='Estagiário' ? '—' : 'R$ '+fmt(provTotal);
+    spanProv.title = 'DSR + variável (recepcionistas) — edite na aba Deduções ou Variável';
     tdProv.appendChild(spanProv); tr.appendChild(tdProv);
 
     const tdDesc=document.createElement('td');
     const spanDesc=document.createElement('div'); spanDesc.className='readonly-val';
     const descTotal = (+d.descontos||0) + (+d.descontoFaltas||0) + (+(vt?.desconto)||0);
     spanDesc.textContent = p.cat==='Estagiário' ? '—' : 'R$ '+fmt(descTotal);
+    spanDesc.title = 'INSS/outros + falta + vale transporte — edite nas abas Deduções e Vale transporte';
     tdDesc.appendChild(spanDesc); tr.appendChild(tdDesc);
 
     const tdLiq=document.createElement('td'); tdLiq.textContent='R$ '+fmt(calcLiquido(p,f,d,v,vt)); tr.appendChild(tdLiq);
