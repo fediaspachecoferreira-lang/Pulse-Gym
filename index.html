@@ -545,9 +545,6 @@
   <div class="panel" id="folha-panel-ded">
     <div class="controls">
       <input type="text" class="search" id="folha-search-ded" placeholder="Buscar por nome...">
-      <button class="btn" id="folha-calc-dsr-btn">Calcular DSR automaticamente (Professores)</button>
-      <button class="btn" id="folha-calc-inss-btn">Calcular INSS automaticamente</button>
-      <button class="btn" id="folha-calc-irrf-btn">Calcular IRRF automaticamente</button>
     </div>
     <div class="metrics" id="folha-metrics-ded"></div>
     <div class="table-card">
@@ -559,7 +556,7 @@
     </div>
     <details class="help-details">
       <summary>Como funcionam os cálculos automáticos</summary>
-      <p><b>DSR</b> — só existe para Professor. Fórmula: (salário bruto do mês ÷ dias trabalhados) × domingos e feriados válidos naquele mês. Um domingo/feriado é descontado do cálculo se houver falta marcada na semana anterior a ele (regra da Lei 605/49). <b>INSS</b> — calculado pela tabela progressiva oficial de 2026 (7,5% a 14%, teto R$ 8.475,55), sobre salário + outras prov. <b>IRRF</b> — tabela 2026 com a isenção da Lei 15.270/2025 (renda até R$ 5.000 não paga; entre R$ 5.000 e R$ 7.350 tem redução), calculado sobre a base após o INSS. Esses três botões recalculam tudo de uma vez para quem se aplica — os valores continuam editáveis manualmente depois. Confira sempre com seu contador antes de fechar a folha, principalmente se algum funcionário tiver dependentes (não incluído no cálculo automático) ou situação fora do padrão.</p>
+      <p><b>DSR</b> — só existe para Professor. Fórmula: (salário bruto do mês ÷ dias trabalhados) × domingos e feriados válidos naquele mês. Um domingo/feriado é descontado do cálculo se houver falta marcada na semana anterior a ele (regra da Lei 605/49). <b>INSS</b> — calculado pela tabela progressiva oficial de 2026 (7,5% a 14%, teto R$ 8.475,55), sobre salário + outras prov. <b>IRRF</b> — tabela 2026 com a isenção da Lei 15.270/2025 (renda até R$ 5.000 não paga; entre R$ 5.000 e R$ 7.350 tem redução), calculado sobre a base após o INSS. <b>Desconto de VT (6%)</b> — na aba Vale transporte, calculado sobre o salário das categorias elegíveis. Todos esses quatro valores recalculam sozinhos sempre que algo relevante muda (salário, horas, faltas etc.) — você não precisa apertar nada. Se editar um valor manualmente, ele trava (não é mais recalculado sozinho) e aparece um ↺ ao lado do campo — clique nele pra descartar a edição e voltar ao cálculo automático. Confira sempre com seu contador antes de fechar a folha, principalmente se algum funcionário tiver dependentes (não incluído no cálculo automático) ou situação fora do padrão.</p>
     </details>
     <p class="save-note">Descontos funcionário: outros descontos sobre o salário, entra como Descontos na Folha. FGTS: depósito mensal do empregador, não entra no líquido. DSR: só para Professor, calculado automaticamente. IRRF: calculado automaticamente. Desconto VT (6%): calculado na aba Vale transporte. O desconto por falta é calculado no calendário da aba Folha.</p>
   </div>
@@ -585,7 +582,6 @@
     <div class="controls">
       <input type="text" class="search" id="folha-search-vt" placeholder="Buscar por nome...">
       <button class="btn primary" id="folha-add-vt">+ Incluir funcionário</button>
-      <button class="btn" id="folha-calc-desconto-vt-btn">Calcular desconto de 6% (Professor, Coordenador, Recepcionista, Serviços gerais)</button>
     </div>
     <div class="metrics" id="folha-metrics-vt"></div>
     <div class="table-card">
@@ -1267,6 +1263,50 @@ function calcLiquido(p, f, d, v, vt){
   return +(gross + dsrValor - (+d.descontos||0) - (+d.descontoFaltas||0) - (+d.irrf||0) - descVt + (+(v?.valor)||0)).toFixed(2);
 }
 
+function autoCalcularTudo(m){
+  m.funcionarios.forEach(p=>{
+    const f=m.folha[p.cod], d=m.deducoes[p.cod], v=m.variavel[p.cod], vt=m.vt[p.cod];
+    if(!d.manual) d.manual = {descontos:false, irrf:false, dsr:false};
+    if(vt && vt.manual===undefined) vt.manual = false;
+
+    if(p.cat==='Professor' && !d.manual.dsr){
+      d.dsr = calcularDSR(p, f, appData.current);
+    }
+    const dsrValor = p.cat==='Professor' ? (+d.dsr||0) : 0;
+    const baseTributavel = grossPay(p,f) + dsrValor + (+(v?.valor)||0);
+
+    if(p.cat!=='Estagiário' && !d.manual.descontos){
+      d.descontos = calcularINSS(baseTributavel);
+    }
+    if(p.cat!=='Estagiário' && !d.manual.irrf){
+      d.irrf = calcularIRRF(baseTributavel, d.descontos);
+    }
+    if(vt && CATS_DESCONTO_VT.includes(p.cat) && !vt.manual){
+      const baseVt = isHourly(p.cat) ? grossPay(p,f) : (+f.sal||0);
+      const totalVtRow = calcVt(vt).total;
+      vt.desconto = Math.min(totalVtRow, +(baseVt*0.06).toFixed(2));
+    }
+  });
+}
+
+function tdCampoAuto(valor, isManual, onEdit, onReset){
+  const td=document.createElement('td');
+  const wrap=document.createElement('div'); wrap.style.cssText='display:flex;align-items:center;gap:4px;justify-content:flex-end;';
+  const inp=document.createElement('input'); inp.type='number'; inp.step='0.01'; inp.value=valor||0;
+  inp.title = isManual ? 'Editado manualmente — não será recalculado sozinho' : 'Calculado automaticamente';
+  inp.style.textAlign='right';
+  inp.onchange=()=> onEdit(+inp.value||0);
+  wrap.appendChild(inp);
+  if(isManual){
+    const btn=document.createElement('button'); btn.textContent='↺'; btn.title='Voltar a calcular automaticamente';
+    btn.style.cssText='border:none;background:none;color:var(--text-secondary);cursor:pointer;font-size:14px;padding:2px;flex-shrink:0;';
+    btn.onclick=()=> onReset();
+    wrap.appendChild(btn);
+  }
+  td.appendChild(wrap);
+  return td;
+}
+
 const colsFolhaDef = [
   {key:'nome', label:'Nome', left:true, get:r=>r.p.nome},
   {key:'cat', label:'Categoria', left:true, get:r=>r.p.cat},
@@ -1329,6 +1369,8 @@ document.getElementById('folha-faltas-modal-close').addEventListener('click', ()
 
 function renderFolha(){
   const m = currentMonth();
+  autoCalcularTudo(m);
+  persist();
   const tabsEl = document.getElementById('folha-tabs-folha');
   tabsEl.innerHTML='';
   ["Todos",...catsFolha].forEach(c=>{
@@ -1491,6 +1533,8 @@ let stateDed = {q:""};
 
 function renderDed(){
   const m = currentMonth();
+  autoCalcularTudo(m);
+  persist();
   let people = m.funcionarios.filter(p=>p.nome.toLowerCase().includes(stateDed.q.toLowerCase()));
   const rowsData = people.map(p=>({p, d:m.deducoes[p.cod], f:m.folha[p.cod], vt:m.vt[p.cod]}));
 
@@ -1522,23 +1566,31 @@ function renderDed(){
     const spanNome=document.createElement('div'); spanNome.className='readonly-name left'; spanNome.textContent=p.nome;
     tdNome.appendChild(spanNome); tr.appendChild(tdNome);
 
-    [["descontos"],["irrf"],["fgts"]].forEach(([k])=>{
-      const td=document.createElement('td');
-      const inp=document.createElement('input'); inp.type='number'; inp.step='0.01'; inp.value=d[k]||0;
-      inp.onchange=()=>{ d[k]=+inp.value||0; persist(); renderDed(); renderFolha(); };
-      td.appendChild(inp); tr.appendChild(td);
+    [["descontos"],["irrf"]].forEach(([k])=>{
+      const td = tdCampoAuto(d[k], d.manual[k],
+        (val)=>{ d[k]=val; d.manual[k]=true; persist(); renderDed(); renderFolha(); },
+        ()=>{ d.manual[k]=false; persist(); renderAll(); }
+      );
+      tr.appendChild(td);
     });
+    {
+      const td=document.createElement('td');
+      const inp=document.createElement('input'); inp.type='number'; inp.step='0.01'; inp.value=d.fgts||0;
+      inp.onchange=()=>{ d.fgts=+inp.value||0; persist(); renderDed(); renderFolha(); };
+      td.appendChild(inp); tr.appendChild(td);
+    }
 
-    const tdDsr=document.createElement('td');
     if(p.cat==='Professor'){
-      const inpDsr=document.createElement('input'); inpDsr.type='number'; inpDsr.step='0.01'; inpDsr.value=d.dsr||0;
-      inpDsr.onchange=()=>{ d.dsr=+inpDsr.value||0; persist(); renderDed(); renderFolha(); };
-      tdDsr.appendChild(inpDsr);
+      tr.appendChild(tdCampoAuto(d.dsr, d.manual.dsr,
+        (val)=>{ d.dsr=val; d.manual.dsr=true; persist(); renderDed(); renderFolha(); },
+        ()=>{ d.manual.dsr=false; persist(); renderAll(); }
+      ));
     } else {
+      const tdDsr=document.createElement('td');
       const dash=document.createElement('div'); dash.className='readonly-val'; dash.style.textAlign='right'; dash.textContent='—';
       tdDsr.appendChild(dash);
+      tr.appendChild(tdDsr);
     }
-    tr.appendChild(tdDsr);
 
     const tdDescVt=document.createElement('td');
     const spanDescVt=document.createElement('div'); spanDescVt.className='readonly-val'; spanDescVt.textContent = 'R$ '+fmt(vt?vt.desconto:0);
@@ -1555,46 +1607,6 @@ function renderDed(){
 }
 document.getElementById('folha-search-ded').addEventListener('input',e=>{stateDed.q=e.target.value;renderDed();});
 
-document.getElementById('folha-calc-dsr-btn').addEventListener('click', ()=>{
-  const m = currentMonth();
-  let count=0;
-  m.funcionarios.forEach(p=>{
-    if(p.cat!=='Professor') return;
-    const f=m.folha[p.cod], d=m.deducoes[p.cod];
-    d.dsr = calcularDSR(p, f, appData.current);
-    count++;
-  });
-  persist(); renderAll();
-  alert('DSR calculado para '+count+' professor(es).');
-});
-document.getElementById('folha-calc-inss-btn').addEventListener('click', ()=>{
-  const m = currentMonth();
-  let count=0;
-  m.funcionarios.forEach(p=>{
-    if(p.cat==='Estagiário') return;
-    const f=m.folha[p.cod], d=m.deducoes[p.cod], v=m.variavel[p.cod];
-    const dsrValor = p.cat==='Professor' ? (+d.dsr||0) : 0;
-    const base = grossPay(p,f) + dsrValor + (+(v?.valor)||0);
-    d.descontos = calcularINSS(base);
-    count++;
-  });
-  persist(); renderAll();
-  alert('INSS calculado para '+count+' funcionário(s). Estagiários não têm INSS.');
-});
-document.getElementById('folha-calc-irrf-btn').addEventListener('click', ()=>{
-  const m = currentMonth();
-  let count=0;
-  m.funcionarios.forEach(p=>{
-    if(p.cat==='Estagiário') return;
-    const f=m.folha[p.cod], d=m.deducoes[p.cod], v=m.variavel[p.cod];
-    const dsrValor = p.cat==='Professor' ? (+d.dsr||0) : 0;
-    const base = grossPay(p,f) + dsrValor + (+(v?.valor)||0);
-    d.irrf = calcularIRRF(base, d.descontos);
-    count++;
-  });
-  persist(); renderAll();
-  alert('IRRF calculado para '+count+' funcionário(s). Calcule o INSS primeiro, já que o IRRF depende dele.');
-});
 
 /* ---------- VARIÁVEL (RECEPCIONISTAS) ---------- */
 let stateVar = {q:""};
@@ -1655,6 +1667,8 @@ function calcVt(v){
 
 function renderVt(){
   const m = currentMonth();
+  autoCalcularTudo(m);
+  persist();
   let people = m.funcionarios.filter(p=>p.nome.toLowerCase().includes(stateVt.q.toLowerCase()));
   const rowsData = people.map(p=>({p, v:m.vt[p.cod]}));
 
@@ -1683,12 +1697,18 @@ function renderVt(){
     const spanNome=document.createElement('div'); spanNome.className='readonly-name left'; spanNome.textContent=p.nome;
     tdNome.appendChild(spanNome); tr.appendChild(tdNome);
 
-    [["diasUteis"],["valorDia"],["desconto"]].forEach(([k])=>{
+    [["diasUteis"],["valorDia"]].forEach(([k])=>{
       const td=document.createElement('td');
       const inp=document.createElement('input'); inp.type='number'; inp.step='0.01'; inp.value=v[k];
       inp.onchange=()=>{ v[k]=+inp.value||0; persist(); renderVt(); };
       td.appendChild(inp); tr.appendChild(td);
     });
+    {
+      tr.appendChild(tdCampoAuto(v.desconto, v.manual,
+        (val)=>{ v.desconto=val; v.manual=true; persist(); renderVt(); renderFolha(); renderDed(); },
+        ()=>{ v.manual=false; persist(); renderAll(); }
+      ));
+    }
 
     const calc=calcVt(v);
     const tdTotal=document.createElement('td'); tdTotal.textContent='R$ '+fmt(calc.total); tr.appendChild(tdTotal);
@@ -1708,22 +1728,7 @@ function renderVt(){
 }
 document.getElementById('folha-search-vt').addEventListener('input',e=>{stateVt.q=e.target.value;renderVt();});
 document.getElementById('folha-add-vt').addEventListener('click', addFuncionario);
-document.getElementById('folha-calc-desconto-vt-btn').addEventListener('click', ()=>{
-  const m = currentMonth();
-  let count = 0;
-  m.funcionarios.forEach(p=>{
-    if(!CATS_DESCONTO_VT.includes(p.cat)) return;
-    const f = m.folha[p.cod];
-    const vt = m.vt[p.cod];
-    const base = isHourly(p.cat) ? grossPay(p,f) : (+f.sal||0);
-    const totalVtRow = calcVt(vt).total;
-    const sugerido = Math.min(totalVtRow, +(base*0.06).toFixed(2));
-    vt.desconto = sugerido;
-    count++;
-  });
-  persist(); renderAll();
-  alert('Desconto de 6% calculado e aplicado para ' + count + ' funcionário(s) elegível(is). Você ainda pode ajustar manualmente cada valor.');
-});
+
 
 /* ---------- ações gerais ---------- */
 document.getElementById('folha-reset-btn').addEventListener('click',()=>{
