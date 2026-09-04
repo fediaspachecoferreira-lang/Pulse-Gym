@@ -30,7 +30,7 @@
   #hub-menu-toggle:hover{background:#F6F5F1;}
   #hub-topbar-brand{display:flex;align-items:center;gap:10px;flex:1;min-width:0;}
   #hub-topbar-brand .hub-logo{
-    width:32px;height:auto;object-fit:contain;flex-shrink:0;
+    width:48px;height:auto;object-fit:contain;flex-shrink:0;
   }
   #hub-topbar-title{font-size:15px;font-weight:600;color:#2A2925;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   #hub-cloud-status{
@@ -465,7 +465,6 @@
 <aside id="hub-sidebar">
   <div id="hub-brand">
     <div id="hub-brand-info">
-      <img class="hub-logo" src="logo.png" alt="Pulse Gym">
       <div>
         <h1>Pulse Gym</h1>
         <p class="hub-sub">Central de gestão</p>
@@ -546,6 +545,9 @@
   <div class="panel" id="folha-panel-ded">
     <div class="controls">
       <input type="text" class="search" id="folha-search-ded" placeholder="Buscar por nome...">
+      <button class="btn" id="folha-calc-dsr-btn">Calcular DSR automaticamente (Professores)</button>
+      <button class="btn" id="folha-calc-inss-btn">Calcular INSS automaticamente</button>
+      <button class="btn" id="folha-calc-irrf-btn">Calcular IRRF automaticamente</button>
     </div>
     <div class="metrics" id="folha-metrics-ded"></div>
     <div class="table-card">
@@ -555,7 +557,11 @@
         <tfoot><tr id="folha-tfoot-ded"></tr></tfoot>
       </table>
     </div>
-    <p class="save-note">Descontos funcionário: desconto sobre o salário (ex. INSS), entra como Out.Desc. na Folha. FGTS: depósito mensal do empregador, não entra no líquido. DSR: pagamento do empregador que entra como Out.Prov. na Folha. Desconto VT (6%): calculado na aba Vale transporte, mostrado aqui só para consulta — também entra no Out.Desc. e no líquido. O desconto por falta agora fica só na aba Folha, calculado sozinho com base nas horas diárias e no valor da hora de cada pessoa.</p>
+    <details class="help-details">
+      <summary>Como funcionam os cálculos automáticos</summary>
+      <p><b>DSR</b> — só existe para Professor. Fórmula: (salário bruto do mês ÷ dias trabalhados) × domingos e feriados válidos naquele mês. Um domingo/feriado é descontado do cálculo se houver falta marcada na semana anterior a ele (regra da Lei 605/49). <b>INSS</b> — calculado pela tabela progressiva oficial de 2026 (7,5% a 14%, teto R$ 8.475,55), sobre salário + outras prov. <b>IRRF</b> — tabela 2026 com a isenção da Lei 15.270/2025 (renda até R$ 5.000 não paga; entre R$ 5.000 e R$ 7.350 tem redução), calculado sobre a base após o INSS. Esses três botões recalculam tudo de uma vez para quem se aplica — os valores continuam editáveis manualmente depois. Confira sempre com seu contador antes de fechar a folha, principalmente se algum funcionário tiver dependentes (não incluído no cálculo automático) ou situação fora do padrão.</p>
+    </details>
+    <p class="save-note">Descontos funcionário: outros descontos sobre o salário, entra como Descontos na Folha. FGTS: depósito mensal do empregador, não entra no líquido. DSR: só para Professor, calculado automaticamente. IRRF: calculado automaticamente. Desconto VT (6%): calculado na aba Vale transporte. O desconto por falta é calculado no calendário da aba Folha.</p>
   </div>
 
   <!-- VARIÁVEL (RECEPCIONISTAS) -->
@@ -603,6 +609,17 @@
   <p class="save-note" id="folha-save-note">Salvo automaticamente neste navegador.</p>
 
   <footer>Este arquivo funciona offline — dê duplo clique para abrir direto no navegador, sem internet. Os dados ficam salvos neste mesmo navegador; para levar para outro computador, use "Exportar dados".</footer>
+</div>
+
+<div id="folha-faltas-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:400;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:var(--surface);border-radius:14px;max-width:360px;width:100%;padding:22px;">
+    <h2 id="folha-faltas-modal-title" style="font-size:16px;margin:0 0 4px;">Faltas</h2>
+    <p style="font-size:12.5px;color:var(--text-secondary);margin:0 0 12px;">Clique nos dias em que a pessoa faltou nesta competência.</p>
+    <div id="folha-faltas-calendar-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:14px;"></div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn primary" id="folha-faltas-modal-close">Pronto</button>
+    </div>
+  </div>
 </div>
 
 <div id="folha-export-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:400;align-items:center;justify-content:center;padding:20px;">
@@ -1009,8 +1026,8 @@ function buildSeedMonth(){
   const funcionarios = seedRaw.map(r=>({cod:r.cod, nome:r.nome, cat:r.cat}));
   const folha = {}, deducoes = {}, vt = {}, variavel = {};
   seedRaw.forEach(r=>{
-    folha[r.cod] = {sal:r.sal, horasDiarias:r.horasDiarias, diasTrab:r.diasTrab, sabados:r.sabados, horaExtra:r.horaExtra, faltas:0};
-    deducoes[r.cod] = {descontos:r.descontos, fgts:r.fgts, dsr:r.dsr, descontoFaltas:0};
+    folha[r.cod] = {sal:r.sal, horasDiarias:r.horasDiarias, diasTrab:r.diasTrab, sabados:r.sabados, horaExtra:r.horaExtra, faltas:0, faltasDatas:[]};
+    deducoes[r.cod] = {descontos:r.descontos, fgts:r.fgts, dsr:(r.cat==='Professor'?r.dsr:0), descontoFaltas:0, irrf:0};
     vt[r.cod] = {diasUteis:r.diasUteis, valorDia:r.valorDia, desconto:r.vtDesconto};
     variavel[r.cod] = {valor:r.variavel};
   });
@@ -1024,10 +1041,22 @@ function loadState(){
     const raw = localStorage.getItem(STORAGE_KEY);
     if(raw){
       const parsed = JSON.parse(raw);
-      if(parsed && parsed.months && Object.keys(parsed.months).length) return parsed;
+      if(parsed && parsed.months && Object.keys(parsed.months).length) return migrateData(parsed);
     }
   }catch(e){}
   return defaultAppData();
+}
+function migrateData(appDataToMigrate){
+  Object.values(appDataToMigrate.months||{}).forEach(m=>{
+    (m.funcionarios||[]).forEach(p=>{
+      const f = m.folha[p.cod];
+      const d = m.deducoes[p.cod];
+      if(f && !f.faltasDatas) f.faltasDatas = [];
+      if(d && d.irrf===undefined) d.irrf = 0;
+      if(d && p.cat!=='Professor' && d.dsr){ /* mantém valores antigos de outras categorias visíveis, mas não soma mais no líquido */ }
+    });
+  });
+  return appDataToMigrate;
 }
 let appData = loadState();
 
@@ -1064,8 +1093,8 @@ document.getElementById('folha-new-month-btn').addEventListener('click', ()=>{
   const funcionarios = JSON.parse(JSON.stringify(src.funcionarios));
   const folha={}, deducoes={}, vt={}, variavel={};
   funcionarios.forEach(f=>{
-    folha[f.cod] = {sal:0,horasDiarias:8,diasTrab:22,sabados:0,horaExtra:0,faltas:0};
-    deducoes[f.cod] = {descontos:0,fgts:0,dsr:0,descontoFaltas:0};
+    folha[f.cod] = {sal:0,horasDiarias:8,diasTrab:22,sabados:0,horaExtra:0,faltas:0,faltasDatas:[]};
+    deducoes[f.cod] = {descontos:0,fgts:0,dsr:0,descontoFaltas:0,irrf:0};
     const srcVt = src.vt[f.cod] || {diasUteis:22,valorDia:8.60};
     vt[f.cod] = {diasUteis:srcVt.diasUteis, valorDia:srcVt.valorDia, desconto:0};
     variavel[f.cod] = {valor:0};
@@ -1106,8 +1135,8 @@ function addFuncionario(){
   const m = currentMonth();
   const nextCod = Math.max(0,...m.funcionarios.map(f=>f.cod), 0)+1;
   m.funcionarios.push({cod:nextCod, nome:"Novo colaborador", cat:"Professor"});
-  m.folha[nextCod] = {sal:0,horasDiarias:8,diasTrab:22,sabados:0,horaExtra:0,faltas:0};
-  m.deducoes[nextCod] = {descontos:0,fgts:0,dsr:0,descontoFaltas:0};
+  m.folha[nextCod] = {sal:0,horasDiarias:8,diasTrab:22,sabados:0,horaExtra:0,faltas:0,faltasDatas:[]};
+  m.deducoes[nextCod] = {descontos:0,fgts:0,dsr:0,descontoFaltas:0,irrf:0};
   m.vt[nextCod] = {diasUteis:22,valorDia:8.60,desconto:0};
   m.variavel[nextCod] = {valor:0};
 
@@ -1151,11 +1180,91 @@ function grossPay(p, f){
 }
 const CATS_DESCONTO_VT = ['Professor','Coordenador','Recepcionista','Serviços gerais'];
 
+/* ---------- feriados, DSR, INSS e IRRF (referência 2026 — confira sempre com o contador) ---------- */
+function feriadosDoAno(year){
+  const a = year % 19, b = Math.floor(year/100), c = year % 100;
+  const d = Math.floor(b/4), e = b%4, f = Math.floor((b+8)/25);
+  const g = Math.floor((b-f+1)/3), h = (19*a+b-d-g+15)%30;
+  const i = Math.floor(c/4), k = c%4;
+  const l = (32+2*e+2*i-h-k)%7;
+  const m = Math.floor((a+11*h+22*l)/451);
+  const mes = Math.floor((h+l-7*m+114)/31);
+  const dia = ((h+l-7*m+114)%31)+1;
+  const pascoa = new Date(year, mes-1, dia);
+  const addDays = (date,days)=>{ const d2=new Date(date); d2.setDate(d2.getDate()+days); return d2; };
+  const moveis = [addDays(pascoa,-48), addDays(pascoa,-47), addDays(pascoa,-2), addDays(pascoa,60)];
+  const fixos = [[1,1],[4,21],[5,1],[9,7],[10,12],[11,2],[11,15],[11,20],[12,25]].map(([mm,dd])=> new Date(year,mm-1,dd));
+  return new Set([...fixos, ...moveis].map(dt=> dt.toISOString().slice(0,10)));
+}
+function diasDescansoDoMes(monthKey){
+  const [year, month] = monthKey.split('-').map(Number);
+  const feriados = feriadosDoAno(year);
+  const diasNoMes = new Date(year, month, 0).getDate();
+  const descansos = [];
+  for(let dNum=1; dNum<=diasNoMes; dNum++){
+    const date = new Date(year, month-1, dNum);
+    const iso = date.toISOString().slice(0,10);
+    if(date.getDay()===0 || feriados.has(iso)) descansos.push(iso);
+  }
+  return descansos;
+}
+function faltouNaSemanaAnterior(descansoISO, faltasDatas){
+  const descanso = new Date(descansoISO+'T00:00:00');
+  return (faltasDatas||[]).some(fd=>{
+    const falta = new Date(fd+'T00:00:00');
+    const diff = (descanso-falta)/86400000;
+    return diff>=0 && diff<=6;
+  });
+}
+function calcularDSR(p, f, monthKey){
+  if(p.cat !== 'Professor') return 0;
+  const gross = grossPay(p, f);
+  const diasTrabalhados = +f.diasTrab||0;
+  if(diasTrabalhados<=0 || gross<=0) return 0;
+  const valorDia = gross / diasTrabalhados;
+  const descansos = diasDescansoDoMes(monthKey);
+  const faltasDatas = f.faltasDatas || [];
+  const validos = descansos.filter(dd => !faltouNaSemanaAnterior(dd, faltasDatas));
+  return +(valorDia * validos.length).toFixed(2);
+}
+function calcularINSS(baseSalario){
+  const faixas = [ {ate:1621.00, aliq:0.075}, {ate:2902.84, aliq:0.09}, {ate:4354.27, aliq:0.12}, {ate:8475.55, aliq:0.14} ];
+  let inss = 0, anterior = 0;
+  const base = Math.min(+baseSalario||0, 8475.55);
+  for(const faixa of faixas){
+    const teto = Math.min(base, faixa.ate);
+    if(teto > anterior) inss += (teto-anterior)*faixa.aliq;
+    anterior = faixa.ate;
+    if(base <= faixa.ate) break;
+  }
+  return +inss.toFixed(2);
+}
+function calcularIRRF(baseTributavel, inssJaCalculado){
+  const bt = +baseTributavel||0;
+  if(bt <= 5000) return 0;
+  const baseCalculo = bt - (+inssJaCalculado||0);
+  const faixas = [
+    {ate:2428.80, aliq:0, deduzir:0},
+    {ate:2826.65, aliq:0.075, deduzir:182.16},
+    {ate:3751.05, aliq:0.15, deduzir:394.16},
+    {ate:4664.68, aliq:0.225, deduzir:675.49},
+    {ate:Infinity, aliq:0.275, deduzir:908.73}
+  ];
+  const faixa = faixas.find(fx=> baseCalculo <= fx.ate);
+  let imposto = Math.max(0, baseCalculo*faixa.aliq - faixa.deduzir);
+  if(bt <= 7350){
+    const reducao = 978.62 - (0.133145*bt);
+    imposto = Math.max(0, imposto-reducao);
+  }
+  return +imposto.toFixed(2);
+}
+
 function calcLiquido(p, f, d, v, vt){
   const gross = grossPay(p, f);
   const descVt = vt ? (+vt.desconto||0) : 0;
+  const dsrValor = p.cat==='Professor' ? (+d.dsr||0) : 0;
   if(p.cat === 'Estagiário') return +gross.toFixed(2);
-  return +(gross + (+d.dsr||0) - (+d.descontos||0) - (+d.descontoFaltas||0) - descVt + (+(v?.valor)||0)).toFixed(2);
+  return +(gross + dsrValor - (+d.descontos||0) - (+d.descontoFaltas||0) - (+d.irrf||0) - descVt + (+(v?.valor)||0)).toFixed(2);
 }
 
 const colsFolhaDef = [
@@ -1167,10 +1276,56 @@ const colsFolhaDef = [
   {key:'sabados', label:'Sábados', get:r=>isHourly(r.p.cat)?(+r.f.sabados||0):-1},
   {key:'horaExtra', label:'Hora extra/devedora', get:r=>isHourly(r.p.cat)?(+r.f.horaExtra||0):-1},
   {key:'faltas', label:'Faltas total', get:r=>+r.f.faltas||0},
-  {key:'dsr', label:'Outras prov.', get:r=>r.p.cat==='Estagiário'?0:((+r.d.dsr||0)+(+(r.v?.valor)||0))},
-  {key:'descontos', label:'Descontos', get:r=>r.p.cat==='Estagiário'?0:((+r.d.descontos||0)+(+r.d.descontoFaltas||0)+(r.vt?(+r.vt.desconto||0):0))},
+  {key:'dsr', label:'Outras prov.', get:r=>r.p.cat==='Estagiário'?0:((r.p.cat==='Professor'?(+r.d.dsr||0):0)+(+(r.v?.valor)||0))},
+  {key:'descontos', label:'Descontos', get:r=>r.p.cat==='Estagiário'?0:((+r.d.descontos||0)+(+r.d.descontoFaltas||0)+(+r.d.irrf||0)+(r.vt?(+r.vt.desconto||0):0))},
   {key:'liquido', label:'Líquido', get:r=>calcLiquido(r.p,r.f,r.d,r.v,r.vt)}
 ];
+
+/* ---------- calendário de faltas ---------- */
+function recalcularDescontoFalta(p, f, d){
+  const total = (f.faltasDatas?f.faltasDatas.length:0) + (+f.faltas||0);
+  if(isHourly(p.cat)){
+    d.descontoFaltas = +(total * (+f.horasDiarias||0) * (+f.sal||0)).toFixed(2);
+  } else {
+    d.descontoFaltas = +(total * ((+f.sal||0) / 30)).toFixed(2);
+  }
+}
+function abrirCalendarioFaltas(p, f, d){
+  if(!f.faltasDatas) f.faltasDatas = [];
+  document.getElementById('folha-faltas-modal-title').textContent = 'Faltas de ' + p.nome;
+  const [year, month] = appData.current.split('-').map(Number);
+  const gridEl = document.getElementById('folha-faltas-calendar-grid');
+  gridEl.innerHTML = '';
+  ['D','S','T','Q','Q','S','S'].forEach(d0=>{
+    const el = document.createElement('div');
+    el.textContent = d0; el.style.cssText='font-size:10px;text-align:center;color:var(--text-secondary);font-weight:600;';
+    gridEl.appendChild(el);
+  });
+  const primeiroDia = new Date(year, month-1, 1).getDay();
+  for(let i=0;i<primeiroDia;i++){ gridEl.appendChild(document.createElement('div')); }
+  const diasNoMes = new Date(year, month, 0).getDate();
+  for(let dia=1; dia<=diasNoMes; dia++){
+    const iso = year+'-'+String(month).padStart(2,'0')+'-'+String(dia).padStart(2,'0');
+    const btn = document.createElement('button');
+    btn.textContent = dia;
+    const marcado = f.faltasDatas.includes(iso);
+    btn.style.cssText = 'padding:8px 0;border-radius:6px;border:1px solid var(--border);font-size:12.5px;cursor:pointer;'
+      + (marcado ? 'background:var(--danger);color:#fff;border-color:var(--danger);' : 'background:var(--surface);color:var(--text);');
+    btn.onclick = ()=>{
+      const idx = f.faltasDatas.indexOf(iso);
+      if(idx>=0) f.faltasDatas.splice(idx,1); else f.faltasDatas.push(iso);
+      recalcularDescontoFalta(p,f,d);
+      persist();
+      abrirCalendarioFaltas(p,f,d);
+      renderFolha(); renderDed();
+    };
+    gridEl.appendChild(btn);
+  }
+  document.getElementById('folha-faltas-modal').style.display = 'flex';
+}
+document.getElementById('folha-faltas-modal-close').addEventListener('click', ()=>{
+  document.getElementById('folha-faltas-modal').style.display = 'none';
+});
 
 function renderFolha(){
   const m = currentMonth();
@@ -1201,11 +1356,11 @@ function renderFolha(){
   }
   const totalLiq = rowsData.reduce((s,r)=>s+calcLiquido(r.p,r.f,r.d,r.v,r.vt),0);
   const totalSal = rowsData.reduce((s,r)=>s+(+r.f.sal||0),0);
-  const totalDsr = rowsData.reduce((s,r)=>s+(r.p.cat==='Estagiário'?0:(+r.d.dsr||0)),0);
+  const totalDsr = rowsData.reduce((s,r)=>s+(r.p.cat==='Professor'?(+r.d.dsr||0):0),0);
 
   const metricsEl = document.getElementById('folha-metrics-folha');
   metricsEl.innerHTML='';
-  [["Pessoas",people.length],["Total salário","R$ "+fmt(totalSal)],["Total DSR (Out.Prov.)","R$ "+fmt(totalDsr)],["Total líquido","R$ "+fmt(totalLiq)]]
+  [["Pessoas",people.length],["Total salário","R$ "+fmt(totalSal)],["Total DSR (Professores)","R$ "+fmt(totalDsr)],["Total líquido","R$ "+fmt(totalLiq)]]
   .forEach(([label,val])=>{
     const d=document.createElement('div'); d.className='metric';
     d.innerHTML=`<div class="label">${label}</div><div class="value">${val}</div>`;
@@ -1288,32 +1443,26 @@ function renderFolha(){
     tr.appendChild(tdHE);
 
     const tdFaltas=document.createElement('td');
-    const inpFaltas=document.createElement('input'); inpFaltas.type='number'; inpFaltas.step='1'; inpFaltas.value=f.faltas;
-    inpFaltas.title = isHourly(p.cat) ? 'Desconto calculado automaticamente: horas diárias × valor da hora' : 'Desconto calculado automaticamente: salário ÷ 30 × faltas';
-    inpFaltas.onchange=()=>{
-      f.faltas=+inpFaltas.value||0;
-      if(isHourly(p.cat)){
-        d.descontoFaltas = +((+f.faltas||0) * (+f.horasDiarias||0) * (+f.sal||0)).toFixed(2);
-      } else {
-        d.descontoFaltas = +((+f.faltas||0) * ((+f.sal||0) / 30)).toFixed(2);
-      }
-      persist(); renderFolha(); renderDed();
-    };
-    tdFaltas.appendChild(inpFaltas); tr.appendChild(tdFaltas);
+    const totalFaltasPessoa = (f.faltasDatas?f.faltasDatas.length:0) + (+f.faltas||0);
+    const btnFaltas=document.createElement('button'); btnFaltas.className='btn'; btnFaltas.style.cssText='padding:5px 10px;font-size:12.5px;';
+    btnFaltas.textContent = totalFaltasPessoa + (totalFaltasPessoa===1?' falta':' faltas');
+    btnFaltas.title = 'Clique para escolher os dias no calendário';
+    btnFaltas.onclick = ()=> abrirCalendarioFaltas(p, f, d);
+    tdFaltas.appendChild(btnFaltas); tr.appendChild(tdFaltas);
 
 
     const tdProv=document.createElement('td');
     const spanProv=document.createElement('div'); spanProv.className='readonly-val';
-    const provTotal = (+d.dsr||0) + (+(v?.valor)||0);
+    const provTotal = (p.cat==='Professor'?(+d.dsr||0):0) + (+(v?.valor)||0);
     spanProv.textContent = p.cat==='Estagiário' ? '—' : 'R$ '+fmt(provTotal);
-    spanProv.title = 'DSR + variável (recepcionistas) — edite na aba Deduções ou Variável';
+    spanProv.title = p.cat==='Professor' ? 'DSR (calculado automaticamente na aba Deduções) + variável' : 'Só Professor tem DSR — aqui mostra só o valor variável (recepcionistas)';
     tdProv.appendChild(spanProv); tr.appendChild(tdProv);
 
     const tdDesc=document.createElement('td');
     const spanDesc=document.createElement('div'); spanDesc.className='readonly-val';
-    const descTotal = (+d.descontos||0) + (+d.descontoFaltas||0) + (+(vt?.desconto)||0);
+    const descTotal = (+d.descontos||0) + (+d.descontoFaltas||0) + (+d.irrf||0) + (+(vt?.desconto)||0);
     spanDesc.textContent = p.cat==='Estagiário' ? '—' : 'R$ '+fmt(descTotal);
-    spanDesc.title = 'INSS/outros + falta + vale transporte — edite nas abas Deduções e Vale transporte';
+    spanDesc.title = 'INSS + IRRF + falta + vale transporte — edite na aba Deduções e Vale transporte';
     tdDesc.appendChild(spanDesc); tr.appendChild(tdDesc);
 
     const tdLiq=document.createElement('td'); tdLiq.textContent='R$ '+fmt(calcLiquido(p,f,d,v,vt)); tr.appendChild(tdLiq);
@@ -1347,12 +1496,13 @@ function renderDed(){
 
   const totalDescontos = rowsData.reduce((s,r)=>s+(+r.d.descontos||0),0);
   const totalFgts = rowsData.reduce((s,r)=>s+(+r.d.fgts||0),0);
-  const totalDsr = rowsData.reduce((s,r)=>s+(+r.d.dsr||0),0);
+  const totalDsr = rowsData.reduce((s,r)=>s+(r.p.cat==='Professor'?(+r.d.dsr||0):0),0);
+  const totalIrrf = rowsData.reduce((s,r)=>s+(+r.d.irrf||0),0);
   const totalDescVt = rowsData.reduce((s,r)=>s+(+(r.vt?.desconto)||0),0);
 
   const metricsEl=document.getElementById('folha-metrics-ded');
   metricsEl.innerHTML='';
-  [["Pessoas",people.length],["Total descontos funcionário","R$ "+fmt(totalDescontos)],["Total FGTS","R$ "+fmt(totalFgts)],["Total desconto VT (6%)","R$ "+fmt(totalDescVt)]]
+  [["Pessoas",people.length],["Total INSS (descontos)","R$ "+fmt(totalDescontos)],["Total IRRF","R$ "+fmt(totalIrrf)],["Total DSR (Professores)","R$ "+fmt(totalDsr)]]
   .forEach(([label,val])=>{
     const d=document.createElement('div'); d.className='metric';
     d.innerHTML=`<div class="label">${label}</div><div class="value">${val}</div>`;
@@ -1362,7 +1512,7 @@ function renderDed(){
   const theadEl=document.getElementById('folha-thead-ded');
   theadEl.innerHTML=`
     <th class="left">Nome</th>
-    <th>Descontos funcionário</th><th>FGTS (empregador)</th><th>DSR (empregador)</th><th>Desconto VT (6%)</th>`;
+    <th>INSS (Descontos)</th><th>IRRF</th><th>FGTS (empregador)</th><th>DSR (só Professor)</th><th>Desconto VT (6%)</th>`;
 
   const tbodyEl=document.getElementById('folha-tbody-ded');
   tbodyEl.innerHTML='';
@@ -1372,12 +1522,23 @@ function renderDed(){
     const spanNome=document.createElement('div'); spanNome.className='readonly-name left'; spanNome.textContent=p.nome;
     tdNome.appendChild(spanNome); tr.appendChild(tdNome);
 
-    [["descontos"],["fgts"],["dsr"]].forEach(([k])=>{
+    [["descontos"],["irrf"],["fgts"]].forEach(([k])=>{
       const td=document.createElement('td');
-      const inp=document.createElement('input'); inp.type='number'; inp.step='0.01'; inp.value=d[k];
+      const inp=document.createElement('input'); inp.type='number'; inp.step='0.01'; inp.value=d[k]||0;
       inp.onchange=()=>{ d[k]=+inp.value||0; persist(); renderDed(); renderFolha(); };
       td.appendChild(inp); tr.appendChild(td);
     });
+
+    const tdDsr=document.createElement('td');
+    if(p.cat==='Professor'){
+      const inpDsr=document.createElement('input'); inpDsr.type='number'; inpDsr.step='0.01'; inpDsr.value=d.dsr||0;
+      inpDsr.onchange=()=>{ d.dsr=+inpDsr.value||0; persist(); renderDed(); renderFolha(); };
+      tdDsr.appendChild(inpDsr);
+    } else {
+      const dash=document.createElement('div'); dash.className='readonly-val'; dash.style.textAlign='right'; dash.textContent='—';
+      tdDsr.appendChild(dash);
+    }
+    tr.appendChild(tdDsr);
 
     const tdDescVt=document.createElement('td');
     const spanDescVt=document.createElement('div'); spanDescVt.className='readonly-val'; spanDescVt.textContent = 'R$ '+fmt(vt?vt.desconto:0);
@@ -1390,9 +1551,50 @@ function renderDed(){
   const tfootEl=document.getElementById('folha-tfoot-ded');
   tfootEl.innerHTML=`
     <td class="left">Total</td>
-    <td>R$ ${fmt(totalDescontos)}</td><td>R$ ${fmt(totalFgts)}</td><td>R$ ${fmt(totalDsr)}</td><td>R$ ${fmt(totalDescVt)}</td>`;
+    <td>R$ ${fmt(totalDescontos)}</td><td>R$ ${fmt(totalIrrf)}</td><td>R$ ${fmt(totalFgts)}</td><td>R$ ${fmt(totalDsr)}</td><td>R$ ${fmt(totalDescVt)}</td>`;
 }
 document.getElementById('folha-search-ded').addEventListener('input',e=>{stateDed.q=e.target.value;renderDed();});
+
+document.getElementById('folha-calc-dsr-btn').addEventListener('click', ()=>{
+  const m = currentMonth();
+  let count=0;
+  m.funcionarios.forEach(p=>{
+    if(p.cat!=='Professor') return;
+    const f=m.folha[p.cod], d=m.deducoes[p.cod];
+    d.dsr = calcularDSR(p, f, appData.current);
+    count++;
+  });
+  persist(); renderAll();
+  alert('DSR calculado para '+count+' professor(es).');
+});
+document.getElementById('folha-calc-inss-btn').addEventListener('click', ()=>{
+  const m = currentMonth();
+  let count=0;
+  m.funcionarios.forEach(p=>{
+    if(p.cat==='Estagiário') return;
+    const f=m.folha[p.cod], d=m.deducoes[p.cod], v=m.variavel[p.cod];
+    const dsrValor = p.cat==='Professor' ? (+d.dsr||0) : 0;
+    const base = grossPay(p,f) + dsrValor + (+(v?.valor)||0);
+    d.descontos = calcularINSS(base);
+    count++;
+  });
+  persist(); renderAll();
+  alert('INSS calculado para '+count+' funcionário(s). Estagiários não têm INSS.');
+});
+document.getElementById('folha-calc-irrf-btn').addEventListener('click', ()=>{
+  const m = currentMonth();
+  let count=0;
+  m.funcionarios.forEach(p=>{
+    if(p.cat==='Estagiário') return;
+    const f=m.folha[p.cod], d=m.deducoes[p.cod], v=m.variavel[p.cod];
+    const dsrValor = p.cat==='Professor' ? (+d.dsr||0) : 0;
+    const base = grossPay(p,f) + dsrValor + (+(v?.valor)||0);
+    d.irrf = calcularIRRF(base, d.descontos);
+    count++;
+  });
+  persist(); renderAll();
+  alert('IRRF calculado para '+count+' funcionário(s). Calcule o INSS primeiro, já que o IRRF depende dele.');
+});
 
 /* ---------- VARIÁVEL (RECEPCIONISTAS) ---------- */
 let stateVar = {q:""};
@@ -1564,8 +1766,8 @@ document.getElementById('folha-clear-numeric-btn').addEventListener('click',()=>
   if(!confirm('Isso zera salário, horas, dias, sábados, hora extra, descontos, FGTS, DSR, valor variável e o desconto do vale transporte da competência '+monthLabel(appData.current)+'. Nomes, códigos, categorias e os valores de dias úteis/valor por trecho do vale transporte são mantidos. Continuar?')) return;
   const m = currentMonth();
   m.funcionarios.forEach(f=>{
-    m.folha[f.cod] = {sal:0,horasDiarias:0,diasTrab:0,sabados:0,horaExtra:0,faltas:0};
-    m.deducoes[f.cod] = {descontos:0,fgts:0,dsr:0,descontoFaltas:0};
+    m.folha[f.cod] = {sal:0,horasDiarias:0,diasTrab:0,sabados:0,horaExtra:0,faltas:0,faltasDatas:[]};
+    m.deducoes[f.cod] = {descontos:0,fgts:0,dsr:0,descontoFaltas:0,irrf:0};
     m.variavel[f.cod] = {valor:0};
     const v = m.vt[f.cod] || {diasUteis:22,valorDia:8.60};
     m.vt[f.cod] = {diasUteis:v.diasUteis, valorDia:v.valorDia, desconto:0};
@@ -1620,28 +1822,31 @@ document.getElementById('folha-export-confirm-btn').addEventListener('click', ()
 function gerarExcelFolha(codsSelecionados){
   const m = currentMonth();
   const headers = ["Nome","Categoria","Salário (hora ou fixo)","Horas diárias","Dias trabalhados","Sábados trabalhados",
-    "Hora extra/devedora","Valor calculado (bruto)","Faltas (mês)","Desconto por falta","Valor variável","Líquido"];
+    "Hora extra/devedora","Valor calculado (bruto)","Faltas (mês)","Datas das faltas","Desconto por falta","Valor variável","Líquido"];
 
   const funcionariosSelecionados = m.funcionarios.filter(p=>codsSelecionados.includes(p.cod));
+  const fmtDataBR = iso => { const [y,mm,dd]=iso.split('-'); return dd+'/'+mm; };
 
   let rows = funcionariosSelecionados.map(p=>{
     const f=m.folha[p.cod], d=m.deducoes[p.cod], v=m.variavel[p.cod], vt=m.vt[p.cod];
     const gross = grossPay(p,f);
     const liq = calcLiquido(p,f,d,v,vt);
+    const datas = (f.faltasDatas||[]).map(fmtDataBR).join(', ');
+    const totalFaltas = (f.faltasDatas?f.faltasDatas.length:0) + (+f.faltas||0);
     return [p.nome, p.cat, f.sal, f.horasDiarias, f.diasTrab, f.sabados, f.horaExtra, gross,
-      f.faltas, d.descontoFaltas, v.valor, liq];
+      totalFaltas, datas, d.descontoFaltas, v.valor, liq];
   });
 
-  let totalRow = ["Total","",0,0,0,0,0,0,0,0,0,0];
-  rows.forEach(r=>{ for(let i=2;i<headers.length;i++){ totalRow[i] = +(totalRow[i] + (+r[i]||0)).toFixed(2); } });
+  let totalRow = ["Total","",0,0,0,0,0,0,0,"",0,0,0];
+  rows.forEach(r=>{ for(let i=2;i<headers.length;i++){ if(i===9) continue; totalRow[i] = +(totalRow[i] + (+r[i]||0)).toFixed(2); } });
 
   const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   let html = '<html><head><meta charset="UTF-8"></head><body><table border="1">';
   html += '<tr>'+headers.map(h=>`<th>${esc(h)}</th>`).join('')+'</tr>';
   rows.forEach(r=>{
-    html += '<tr>'+r.map((c,i)=> i<2 ? `<td>${esc(c)}</td>` : `<td>${(+c||0).toFixed(2)}</td>`).join('')+'</tr>';
+    html += '<tr>'+r.map((c,i)=> (i<2||i===9) ? `<td>${esc(c)}</td>` : `<td>${(+c||0).toFixed(2)}</td>`).join('')+'</tr>';
   });
-  html += '<tr>'+totalRow.map((c,i)=> i<2 ? `<td><b>${esc(c)}</b></td>` : `<td><b>${(+c||0).toFixed(2)}</b></td>`).join('')+'</tr>';
+  html += '<tr>'+totalRow.map((c,i)=> (i<2||i===9) ? `<td><b>${esc(c)}</b></td>` : `<td><b>${(+c||0).toFixed(2)}</b></td>`).join('')+'</tr>';
   html += '</table></body></html>';
 
   const blob = new Blob([html], {type:'application/vnd.ms-excel;charset=utf-8'});
