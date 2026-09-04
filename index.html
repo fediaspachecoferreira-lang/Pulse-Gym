@@ -147,6 +147,7 @@
   #panel-mod-folha .tab.active {background:var(--accent-bg);border-color:var(--accent);color:var(--accent-text);font-weight:600;}
   #panel-mod-folha input[type=text].search {flex:1;min-width:180px;padding:9px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-size:14px;color:var(--text);}
   #panel-mod-folha .btn {padding:9px 14px;border-radius:8px;border:1px solid var(--border-strong);background:var(--surface);font-size:13px;color:var(--text);cursor:pointer;}
+  #panel-mod-folha td .btn {padding:4px 8px;font-size:11.5px;white-space:nowrap;}
   #panel-mod-folha .btn:hover {background:var(--row-hover);}
   #panel-mod-folha .btn.primary {background:var(--accent);border-color:var(--accent);color:#fff;}
   #panel-mod-folha .btn.danger {color:var(--danger);border-color:var(--danger);}
@@ -157,20 +158,20 @@
   #panel-mod-folha .metric .value {font-size:19px;font-weight:600;}
 
   #panel-mod-folha .table-card {background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:auto;}
-  #panel-mod-folha table {width:100%;border-collapse:collapse;font-size:13.5px;min-width:820px;}
-  #panel-mod-folha thead th {text-align:right;padding:12px 10px;font-weight:600;color:var(--text-secondary);font-size:12px;border-bottom:1px solid var(--border-strong);white-space:nowrap;user-select:none;}
+  #panel-mod-folha table {width:100%;border-collapse:collapse;font-size:12.5px;min-width:0;table-layout:auto;}
+  #panel-mod-folha thead th {text-align:right;padding:8px 6px;font-weight:600;color:var(--text-secondary);font-size:11px;border-bottom:1px solid var(--border-strong);white-space:nowrap;user-select:none;}
   #panel-mod-folha thead th.left {text-align:left;}
-  #panel-mod-folha tbody td {padding:6px 10px;text-align:right;border-bottom:1px solid var(--border);white-space:nowrap;}
+  #panel-mod-folha tbody td {padding:4px 6px;text-align:right;border-bottom:1px solid var(--border);white-space:nowrap;}
   #panel-mod-folha tbody td.left {text-align:left;}
   #panel-mod-folha tbody tr:hover {background:var(--row-hover);}
   #panel-mod-folha tbody tr:last-child td {border-bottom:none;}
-  #panel-mod-folha tbody input {width:100%;border:1px solid transparent;background:transparent;font-size:13.5px;text-align:right;padding:5px 4px;border-radius:6px;color:var(--text);font-family:inherit;}
+  #panel-mod-folha tbody input {width:100%;max-width:70px;border:1px solid transparent;background:transparent;font-size:12.5px;text-align:right;padding:4px 3px;border-radius:6px;color:var(--text);font-family:inherit;}
   #panel-mod-folha tbody input.left {text-align:left;min-width:160px;}
   #panel-mod-folha tbody input:hover {border-color:var(--border);}
   #panel-mod-folha tbody input:focus {outline:none;border-color:var(--accent);background:var(--surface);}
   #panel-mod-folha .readonly-name {padding:5px 4px;color:var(--text);min-width:160px;}
-  #panel-mod-folha .readonly-val {padding:5px 4px;color:var(--text-secondary);}
-  #panel-mod-folha select.cat-select {font-size:11px;padding:3px 6px;border-radius:999px;background:var(--accent-bg);color:var(--accent-text);font-weight:600;border:1px solid var(--accent-bg);}
+  #panel-mod-folha .readonly-val {padding:4px 3px;color:var(--text-secondary);font-size:12.5px;}
+  #panel-mod-folha select.cat-select {font-size:10.5px;padding:2px 5px;border-radius:999px;background:var(--accent-bg);color:var(--accent-text);font-weight:600;border:1px solid var(--accent-bg);max-width:110px;}
   #panel-mod-folha .del-btn {border:none;background:none;color:var(--text-secondary);cursor:pointer;font-size:15px;padding:2px 6px;}
   #panel-mod-folha .del-btn:hover {color:var(--danger);}
   #panel-mod-folha tfoot td {padding:12px 10px;text-align:right;font-weight:600;border-top:1.5px solid var(--border-strong);background:var(--row-hover);}
@@ -1528,7 +1529,7 @@ function renderFolha(){
     const tdSab=document.createElement('td');
     if(isHourly(p.cat)){
       const totalSabPessoa = (f.sabadosDatas?f.sabadosDatas.length:0) + (+f.sabados||0);
-      const btnSab=document.createElement('button'); btnSab.className='btn'; btnSab.style.cssText='padding:5px 10px;font-size:12.5px;';
+      const btnSab=document.createElement('button'); btnSab.className='btn';
       btnSab.textContent = totalSabPessoa + (totalSabPessoa===1?' sábado':' sábados');
       btnSab.title = 'Clique para escolher os sábados trabalhados';
       btnSab.onclick = ()=> abrirCalendarioSabados(p, f);
@@ -1552,7 +1553,7 @@ function renderFolha(){
 
     const tdFaltas=document.createElement('td');
     const totalFaltasPessoa = (f.faltasDatas?f.faltasDatas.length:0) + (+f.faltas||0);
-    const btnFaltas=document.createElement('button'); btnFaltas.className='btn'; btnFaltas.style.cssText='padding:5px 10px;font-size:12.5px;';
+    const btnFaltas=document.createElement('button'); btnFaltas.className='btn';
     btnFaltas.textContent = totalFaltasPessoa + (totalFaltasPessoa===1?' falta':' faltas');
     btnFaltas.title = 'Clique para escolher os dias no calendário';
     btnFaltas.onclick = ()=> abrirCalendarioFaltas(p, f, d);
