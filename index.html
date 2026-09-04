@@ -1069,6 +1069,9 @@ function migrateData(appDataToMigrate){
       const d = m.deducoes[p.cod];
       if(f && !f.faltasDatas) f.faltasDatas = [];
       if(f && !f.sabadosDatas) f.sabadosDatas = [];
+      if(f && (+f.faltas||0) > 0){ f.faltas = 0; } /* número antigo sem data — não dá pra saber quais dias eram, zera pra não contar fantasma */
+      if(f && (+f.sabados||0) > 0){ f.sabados = 0; }
+      if(f && d) recalcularDescontoFalta(p, f, d);
       if(d && d.irrf===undefined) d.irrf = 0;
       if(d && d.avaliacaoFisica===undefined) d.avaliacaoFisica = 0;
       if(d && !d.manual) d.manual = {descontos:false, irrf:false, dsr:false};
